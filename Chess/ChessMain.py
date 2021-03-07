@@ -6,7 +6,7 @@ import pygame as p
 import ChessEngine
 import Chess
 
-WIDTH = HEIGHT = 512 #400 is another option
+WIDTH = HEIGHT = 800 #400 is another option
 DIMENSION = 8 #dimensions of a chess board are 8x8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 15 #for animations later on
@@ -30,6 +30,9 @@ def main():
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     gs = ChessEngine.GameState()
+    validMoves = gs.getValidMoves()
+    moveMade = False #flag variable for when a move is made
+
     loadImages() #only do this once, before the while loop
     running = True
     sqSelected = () #no square is selected, keep track of the last click (tuple: (row,col))
@@ -38,6 +41,7 @@ def main():
         for e in p.event.get():
             if e.type == p.QUIT:
                 sys.exit()
+            #mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
                 location = p.mouse.get_pos() #(x,y) location of mouse
                 col = location[0]//SQ_SIZE
@@ -50,9 +54,23 @@ def main():
                     playerClicks.append(sqSelected) #append for both 1st and 2nd clicks
                 if len(playerClicks) == 2: #after the 2nd click
                     move = ChessEngine.Move(playerClicks[0], playerClicks[1], gs.board)
-                    gs.makeMove(move)
-                    sqSelected = () #reset user clicks
-                    playerClicks = []
+                    print(move.getChessNotation())
+                    if move in validMoves:
+                        gs.makeMove(move)
+                        moveMade = True
+                        sqSelected = () #reset user clicks
+                        playerClicks = []
+                    else:
+                        playerClicks = [sqSelected]
+            #key handlers
+            elif e.type == p.KEYDOWN:
+                if e.key == p.K_z: #undo when 'z' is pressed
+                    gs.undoMove()
+                    moveMade = True
+
+        if moveMade:
+            validMoves = gs.getValidMoves()            
+            moveMade = False
 
         drawGameState(screen, gs)
         clock.tick(MAX_FPS)
@@ -70,7 +88,7 @@ def drawGameState(screen, gs):
 Draw the squares on the board. The top left square is always light.
 '''
 def drawBoard(screen):
-    colors = [p.Color(235, 235, 208), p.Color(218, 160, 109)]
+    colors = [p.Color(235, 235, 208), p.Color(204, 157, 127)]
     for r in range(DIMENSION):
         for c in range(DIMENSION):
             color = colors[((r+c) % 2)]
