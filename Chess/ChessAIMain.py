@@ -3,7 +3,7 @@ This is the main driver file. It will be responsible for handling user input and
 '''
 import pygame as p
 from Chess import ChessEngine
-
+from Chess import SmartMoveFinder
 
 WIDTH = HEIGHT = 800  # 400 is another option
 DIMENSION = 8  # dimensions of a chess board are 8x8
@@ -41,13 +41,16 @@ def main():
     sqSelected = ()  # no square is selected, keep track of the last click (tuple: (row,col))
     playerClicks = []  # keep track of player clicks (two tuples: [6,4, (4,4)])
     gameOver = False
+    playerOne = True  # if a human is playing white its true otherwise false
+    playerTwo = False  # same as the above but for black
     while running:
+        humanTurn = (gs.whiteToMove and playerOne) or (not gs.whiteToMove and playerTwo)
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             # mouse handler
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not gameOver:
+                if not gameOver and humanTurn:
                     location = p.mouse.get_pos()  # (x,y) location of mouse
                     col = location[0]//SQ_SIZE
                     row = location[1]//SQ_SIZE
@@ -85,6 +88,15 @@ def main():
                     moveMade = False
                     animate = False
 
+        #AI move finder
+        if not gameOver and not humanTurn:
+            AIMove = SmartMoveFinder.findBestMove(gs, validMoves)
+            if AIMove is None:
+                AIMove = SmartMoveFinder.findRandomMove(validMoves)
+            gs.makeMove(AIMove)
+            moveMade = True
+            animate = True
+
         if moveMade:
             if animate:
                 animateMove(gs.moveLog[-1], screen, gs.board, clock)
@@ -94,13 +106,13 @@ def main():
 
         drawGameState(screen, gs, validMoves, sqSelected)
 
-        if gs.checkMate:
+        if gs.checkmate:
             gameOver = True
             if gs.whiteToMove:
                 drawText(screen, 'Black wins by checkmate')
             else:
                 drawText(screen, 'White wins by checkmate')
-        elif gs.staleMate:
+        elif gs.stalemate:
             gameOver = True
             drawText(screen, 'Stalemate')
 
@@ -174,8 +186,6 @@ def drawPieces(screen, board):
 '''
 Animating a move
 '''
-
-
 def animateMove(move, screen, board, clock):
     global colors
     coords = []  # list of coords that the animation will move through
