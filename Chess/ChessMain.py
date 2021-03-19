@@ -18,7 +18,7 @@ Initialize a global dictionary of images. This will be called exactly once in th
 def loadImages():
     pieces = ['wp', 'wR', 'wN', 'wB', 'wK','wQ', 'bp', 'bR', 'bN', 'bB', 'bK', 'bQ']
     for piece in pieces:
-        IMAGES[piece] = p.transform.scale(p.image.load("Chess\images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
+        IMAGES[piece] = p.transform.scale(p.image.load("images/" + piece + ".png"), (SQ_SIZE, SQ_SIZE))
     # Note: u can acess an image by saying 'IMAGES['wp']'
 
 
@@ -94,13 +94,13 @@ def main():
 
         drawGameState(screen, gs, validMoves, sqSelected)
 
-        if gs.checkMate:
+        if gs.checkmate:
             gameOver = True
             if gs.whiteToMove:
                 drawText(screen, 'Black wins by checkmate')
             else:
                 drawText(screen, 'White wins by checkmate')
-        elif gs.staleMate:
+        elif gs.stalemate:
             gameOver = True
             drawText(screen, 'Stalemate')
 
@@ -195,9 +195,13 @@ def animateMove(move, screen, board, clock):
         p.draw.rect(screen, color, endSquare)
         # draw captured piece onto rectangle
         if move.pieceCaptured != '--':
+            if move.isEnpassantMove:
+                isEnpassantRow = move.endRow + 1 if move.pieceCaptured[0] == 'b' else move.endRow - 1
+                endSquare = p.Rect(move.endCol*SQ_SIZE,isEnpassantRow*SQ_SIZE, SQ_SIZE, SQ_SIZE)
             screen.blit(IMAGES[move.pieceCaptured], endSquare)
         # draw moving piece
-        screen.blit(IMAGES[move.pieceMoved], p.Rect(
+        if move.pieceMoved != '--':
+            screen.blit(IMAGES[move.pieceMoved], p.Rect(
             c*SQ_SIZE, r*SQ_SIZE, SQ_SIZE, SQ_SIZE))
         p.display.flip()
         clock.tick(60)
